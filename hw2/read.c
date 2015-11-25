@@ -10,14 +10,22 @@
 #define NR_eopen 328
 #define NR_eclose 329
 
+int check_remain_len(int fd, int offset) {
+  if (fd == -1)
+    return -1;
+
+  int end = lseek(fd, 0, SEEK_END);
+  return (end-offset);
+}
+
 int main(int argc, char** argv) {
 
   int fd;
-  /*
-  if(argc != 2){
-    printf("Usage: ./read [filename]\n");
-    return 1;
-  }
+  /*                                                                                                                                    
+  if(argc != 2){                                                                                                                        
+    printf("Usage: ./read [filename]\n");                                                                                               
+    return 1;                                                                                                                           
+  }                                                                                                                                     
   */
   printf("Enter key: ");
   char ekey[256];
@@ -30,32 +38,64 @@ int main(int argc, char** argv) {
       break;
     ekey[i++] = ch;
   }
-  //  fgets(ekey, 256, stdin);
+  //  fgets(ekey, 256, stdin);                                                                                                          
   elen = strlen(ekey);
   printf("%s\n", ekey);
   printf("%d\n", elen);
   pid_t pid = getpid();
   printf("pid %d\n", pid);
-  
+
   if ((fd = syscall(NR_eopen, ekey, elen, filename, O_RDONLY, 0, pid)) == -1) {
     perror("open");
     return 2;
   } else
     printf("Successfully opened\n");
 
-  char output[BUF_SIZE];
-  memset(output, '\0', BUF_SIZE);
+  int rmode = 0;
+  int filelen = check_remain_len(fd, 0);
+  char output[filelen];
+  lseek(fd, 0, SEEK_SET);
+  read(fd, output, filelen);
+  //  printf("%s\n", output);                                                                                                           
+  while (!rmode) {
+    printf("Select reading mode: \n");
+    printf("1. Normal read\n");
+    printf("2. Random access\n");
+    printf("Your option: ");
+    scanf("%d", &rmode);
+    getchar();
+    if (rmode == 1) {
+      printf("%s\n", output);
+    } else if (rmode == 2) {
+      printf("Enter offset: ");
+      int offset;
+      scanf("%d", &offset);
+      getchar();
+      int remain_len = check_remain_len(fd, offset);
+      char output2[remain_len];
+      int j = offset;
+      for (i = 0; i < remain_len; i++) {
+        output2[i] = output[j++];
+      }
+      printf("%s\n", output2);
+    } else
+      rmode = 0;
+  }
 
-  read(fd, output, BUF_SIZE);
+  //char output[BUF_SIZE];                                                                                                              
+  //  memset(output, '\0', BUF_SIZE);                                                                                                   
 
-  printf("%s\n", output);
+  //  read(fd, output, BUF_SIZE);                                                                                                       
+
+
 
   if (syscall(NR_eclose, fd) == -1) {
     perror("close");
     return 2;
   } else
     printf("Successfully close\n");
-  
+
   return 0;
 }
+
 
