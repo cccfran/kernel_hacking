@@ -623,10 +623,9 @@ int enlen = 0;
 int _fd = -1;
 int eon = 0;
 pid_t pid = -1;
-int ori_len = 0;
 
 asmlinkage long sys_eopen(const char *ekey, const int elen,
-			  const char *filename, int flags, int mode, pid_t p) {
+                          const char *filename, int flags, int mode, pid_t p) {
   if (ekey != NULL && ekey[0] != '\0'  && elen != 0) {
     memset(enkey, '\0', sizeof(enkey));
     strcpy(enkey, ekey);
@@ -653,98 +652,102 @@ asmlinkage long sys_eclose(int _fd) {
 
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-	struct fd f = fdget_pos(fd);
-	ssize_t ret = -EBADF;
+        struct fd f = fdget_pos(fd);
+        ssize_t ret = -EBADF;
 
-	if (f.file) {
-		loff_t pos = file_pos_read(f.file);
-		ret = vfs_read(f.file, buf, count, &pos);
-		
-		/* fran's code */
-		if (eon && current->pid == pid && fd == _fd) {
-		  int buf_len = strlen(buf);
-		  //char str[ret];
-		  int i;
-		  //memset(str, '\0', ret);
-		  printk(KERN_INFO "!!!E IN EREAD with pid %d\n", pid);
-		  printk(KERN_INFO "!!!E ret of vfs_read is %llu\n", ret);
-		  printk(KERN_INFO "!!!E length of buffer is %d\n", buf_len);
-		  printk(KERN_INFO "!!!E count of read() is %llu\n", count);
-		  //strcpy(str, buf);
-		  //printk(KERN_INFO "!!!E the ecrypted reading string is %s\n", str);		  		  
-		  for (i=0; i<ret; i++) {
-		    /*
-		    if (str[i] == '\0')
-		      break;		      
-		    */
-		    //str[i] = str[i] ^ enkey[i%enlen];
-		    buf[i] = buf[i] ^ enkey[i%enlen];
-		    
-		  }
-		  //		  str[i] = '\0';
-		  // printk(KERN_INFO "!!!E the decrypted reading string is %s\n", str);		  
-		  printk(KERN_INFO "!!!E end of the string  is %d\n", i);
-		  printk(KERN_INFO "!!!E");
-		  
-		  if (copy_to_user(buf, buf, ret)) {
-		    return -EFAULT;
-		  }
-		}
-		  
-		if (ret >= 0)
-			file_pos_write(f.file, pos);
-		fdput_pos(f);
-	}
-	return ret;
+        if (f.file) {
+                loff_t pos = file_pos_read(f.file);
+                ret = vfs_read(f.file, buf, count, &pos);
+
+                /* fran's code */
+                if (eon && current->pid == pid && fd == _fd) {
+                  int buf_len = strlen(buf);
+                  //char str[ret];                                                                                                                                                                                                            
+                  int i;
+                  //memset(str, '\0', ret);                                                                                                                                                                                                   
+                  printk(KERN_INFO "!!!E IN EREAD with pid %d\n", pid);
+                  printk(KERN_INFO "!!!E position is %d\n", pos);
+                  printk(KERN_INFO "!!!E ret of vfs_read is %llu\n", ret);
+                  printk(KERN_INFO "!!!E length of buffer is %d\n", buf_len);
+                  printk(KERN_INFO "!!!E count of read() is %llu\n", count);
+                  //strcpy(str, buf);                                                                                                                                                                                                         
+                  //printk(KERN_INFO "!!!E the ecrypted reading string is %s\n", str);                                                                                                                                                        
+                  for (i=0; i<ret; i++) {
+                    /*                                                                                                                                                                                                                        
+                    if (str[i] == '\0')                                                                                                                                                                                                       
+                      break;                                                                                                                                                                                                                  
+                    */
+                    //str[i] = str[i] ^ enkey[i%enlen];                                                                                                                                                                                       
+                    buf[i] = buf[i] ^ enkey[i%enlen];
+
+                  }
+                  //              str[i] = '\0';                                                                                                                                                                                              
+                  // printk(KERN_INFO "!!!E the decrypted reading string is %s\n", str);                                                                                                                                                      
+                  printk(KERN_INFO "!!!E end of the string  is %d\n", i);
+                  printk(KERN_INFO "!!!E");
+
+                  if (copy_to_user(buf, buf, ret)) {
+                    return -EFAULT;
+                  }
+                }
+
+                if (ret >= 0)
+                        file_pos_write(f.file, pos);
+                fdput_pos(f);
+        }
+        return ret;
 }
 
 SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
-		size_t, count)
+                size_t, count)
 {
-	struct fd f = fdget_pos(fd);
-	ssize_t ret = -EBADF;
+        struct fd f = fdget_pos(fd);
+        ssize_t ret = -EBADF;
 
-	if (f.file) {
-		loff_t pos = file_pos_read(f.file);
+        if (f.file) {
+                loff_t pos = file_pos_read(f.file);
 
-		/* fran's code */
-		if (eon && current->pid == pid && fd == _fd) { /* if eopen write */
-		  int len = count; //strlen(buf)+1; //  = count+1;
-		  char str[len];
-		  mm_segment_t old_fs = get_fs();
-		  int i;
-		  memset(str, '\0', len);
-		  printk(KERN_INFO "!!!E In EWRITE with pid %d\n", pid);
-		  printk(KERN_INFO "!!!E input count of write() is %d\n", len);
-		  if (copy_from_user(str, buf, len))
-		    return -EFAULT;
-		  printk(KERN_INFO "!!!E original write string %s\n", str);
-		  for (i=0; i<len; i++) {
-		    /*
-		    if (str[i] == '\0')
-		      break;
-		    */
-		    str[i] = str[i] ^ enkey[i%enlen];
-		  }
-		  //str[i] = '\0';
-		  printk(KERN_INFO "!!!E the write string  is %s\n", str);		  		  
-		  printk(KERN_INFO "!!!E end of the string  is %d\n", i);		  
-		  printk(KERN_INFO "!!!E encrpted string len is %d\n", strlen(str));
-		  
-		  set_fs(KERNEL_DS);
-		  ret = vfs_write(f.file, str, i, &pos);
-		  set_fs(old_fs);
-		} else { /* normal write */
-		  // printk(KERN_INFO "In NORMAL WRITE with pid %d\n", current->pid);		  
-		  ret = vfs_write(f.file, buf, count, &pos);		  
-		}
-					
-		if (ret >= 0)
-			file_pos_write(f.file, pos);
-		fdput_pos(f);
-	}
+                /* fran's code */
+                if (eon && current->pid == pid && fd == _fd) { /* if eopen write */
+                  int len = count; //strlen(buf)+1; //  = count+1;                                                                                                                                                                            
+                  char str[len];
+                  mm_segment_t old_fs = get_fs();
+                  int i;
+                  memset(str, '\0', len);
+                  printk(KERN_INFO "!!!E In EWRITE with pid %d\n", pid);
+                  printk(KERN_INFO "!!!E position is %d\n", pos);
+                  printk(KERN_INFO "!!!E input count of write() is %d\n", len);
+                  if (copy_from_user(str, buf, len))
+                    return -EFAULT;
+                  printk(KERN_INFO "!!!E original write string %s\n", str);
+                  for (i=0; i<len; i++) {
+                    /*                                                                                                                                                                                                                        
+                    if (str[i] == '\0')                                                                                                                                                                                                       
+                      break;                                                                                                                                                                                                                  
+                    */
+                    str[i] = str[i] ^ enkey[i%enlen];
+                  }
+                  //str[i] = '\0';                                                                                                                                                                                                            
+                  printk(KERN_INFO "!!!E the write string  is %s\n", str);
+                  printk(KERN_INFO "!!!E end of the string  is %d\n", i);
+                  printk(KERN_INFO "!!!E encrpted string len is %d\n", strlen(str));
 
-	return ret;
+                  set_fs(KERNEL_DS);
+                  ret = vfs_write(f.file, str, i, &pos);
+                  set_fs(old_fs);
+                  printk(KERN_INFO "!!!E write function returns ret is %d\n", ret);
+                  printk(KERN_INFO "!!!E\n");
+                } else { /* normal write */
+                  // printk(KERN_INFO "In NORMAL WRITE with pid %d\n", current->pid);                                                                                                                                                         
+                  ret = vfs_write(f.file, buf, count, &pos);
+                }
+
+                if (ret >= 0)
+                        file_pos_write(f.file, pos);
+                fdput_pos(f);
+        }
+
+        return ret;
 }
 
 SYSCALL_DEFINE4(pread64, unsigned int, fd, char __user *, buf,

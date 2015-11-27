@@ -19,14 +19,15 @@ int check_remain_len(int fd, int offset) {
 }
 
 int main(int argc, char** argv) {
-
   int fd;
-  /*                                                                                                                                    
-  if(argc != 2){                                                                                                                        
-    printf("Usage: ./read [filename]\n");                                                                                               
-    return 1;                                                                                                                           
-  }                                                                                                                                     
+  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+  if(argc != 2){                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    printf("Usage: ./read [filename]\n");                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    return 1;                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
   */
+
+  /* Input key */
   printf("Enter key: ");
   char ekey[256];
   int elen;
@@ -38,25 +39,27 @@ int main(int argc, char** argv) {
       break;
     ekey[i++] = ch;
   }
-  //  fgets(ekey, 256, stdin);                                                                                                          
   elen = strlen(ekey);
-  printf("%s\n", ekey);
-  printf("%d\n", elen);
+  //  printf("%s\n", ekey);                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  //  printf("%d\n", elen);                                                                                                                                                                                                                                                                                                                                                                                                                                                                
   pid_t pid = getpid();
-  printf("pid %d\n", pid);
+  //  printf("pid %d\n", pid);                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 
+  /* open file */
   if ((fd = syscall(NR_eopen, ekey, elen, filename, O_RDONLY, 0, pid)) == -1) {
     perror("open");
     return 2;
-  } else
-    printf("Successfully opened\n");
+  }// else                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+    //    printf("Successfully opened\n");                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
   int rmode = 0;
   int filelen = check_remain_len(fd, 0);
+  //  printf("filelen: %d\n", filelen);                                                                                                                                                                                                                                                                                                                                                                                                                                                    
   char output[filelen];
   lseek(fd, 0, SEEK_SET);
-  read(fd, output, filelen);
-  //  printf("%s\n", output);                                                                                                           
+  int retlen = read(fd, output, filelen);
+  //  printf("%d\n", retlen);                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  //  printf("%s\n", output);                                                                                                                                                                                                                                                                                                                                                                                                                                                              
   while (!rmode) {
     printf("Select reading mode: \n");
     printf("1. Normal read\n");
@@ -64,9 +67,13 @@ int main(int argc, char** argv) {
     printf("Your option: ");
     scanf("%d", &rmode);
     getchar();
-    if (rmode == 1) {
-      printf("%s\n", output);
-    } else if (rmode == 2) {
+    if (rmode == 1) { /* normal read */
+      // printf("%s\n", output);                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+      int j;
+      for (j = 0; j < filelen; j++)
+        printf("%c", output[j]);
+      printf("\n");
+    } else if (rmode == 2) { /* random access */
       printf("Enter offset: ");
       int offset;
       scanf("%d", &offset);
@@ -76,26 +83,20 @@ int main(int argc, char** argv) {
       int j = offset;
       for (i = 0; i < remain_len; i++) {
         output2[i] = output[j++];
+        printf("%c", output2[i]);
       }
-      printf("%s\n", output2);
+      printf("\n");
+      // printf("%s\n", output2);                                                                                                                                                                                                                                                                                                                                                                                                                                                          
     } else
       rmode = 0;
   }
 
-  //char output[BUF_SIZE];                                                                                                              
-  //  memset(output, '\0', BUF_SIZE);                                                                                                   
-
-  //  read(fd, output, BUF_SIZE);                                                                                                       
-
-
-
+  /* close file */
   if (syscall(NR_eclose, fd) == -1) {
     perror("close");
     return 2;
-  } else
-    printf("Successfully close\n");
+  } //else                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+    //printf("Successfully close\n");                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 
   return 0;
 }
-
-
