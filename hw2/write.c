@@ -23,20 +23,18 @@ int check_len(int fd, int offset) {
 int main(int argc, char** argv) {
 
   int fd = -1;
-
-  /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
   if(argc != 2){                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
     printf("Usage: ./write [filename]\n");                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     return 1;                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
   }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-  */
 
   /* input key */
   printf("Enter key: ");
   char ekey[256];
   int elen;
   char filename[256];
-  strcpy(filename, "a.txt");
+  strcpy(filename, argv[1]);
   int j = 0, c;
   while ((c = getc(stdin)) != EOF) {
     if (c == '\n')
