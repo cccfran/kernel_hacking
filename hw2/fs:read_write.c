@@ -657,36 +657,40 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 
         if (f.file) {
                 loff_t pos = file_pos_read(f.file);
+                int spos = pos;
                 ret = vfs_read(f.file, buf, count, &pos);
 
                 /* fran's code */
                 if (eon && current->pid == pid && fd == _fd) {
                   int buf_len = strlen(buf);
-                  //char str[ret];                                                                                                                                                                                                            
+                  //char str[ret];                                                                                                                                                
                   int i;
-                  //memset(str, '\0', ret);                                                                                                                                                                                                   
+                  //memset(str, '\0', ret);                                                                                                                                       
                   printk(KERN_INFO "!!!E IN EREAD with pid %d\n", pid);
+                  printk(KERN_INFO "!!!E spos %d\n", spos);
                   printk(KERN_INFO "!!!E position is %d\n", pos);
                   printk(KERN_INFO "!!!E ret of vfs_read is %llu\n", ret);
                   printk(KERN_INFO "!!!E length of buffer is %d\n", buf_len);
                   printk(KERN_INFO "!!!E count of read() is %llu\n", count);
-                  //strcpy(str, buf);                                                                                                                                                                                                         
-                  //printk(KERN_INFO "!!!E the ecrypted reading string is %s\n", str);                                                                                                                                                        
-                  for (i=0; i<ret; i++) {
-                    /*                                                                                                                                                                                                                        
-                    if (str[i] == '\0')                                                                                                                                                                                                       
-                      break;                                                                                                                                                                                                                  
+                  //strcpy(str, buf);                                                                                                                                             
+                  //printk(KERN_INFO "!!!E the ecrypted reading string is %s\n", str);                                                                                            
+                  char str[count];
+                  int j=0;
+                  for (i=spos; i<spos+count; i++) {
+                    /*                                                                                                                                                            
+                    if (str[i] == '\0')                                                                                                                                           
+                      break;                                                                                                                                                      
                     */
-                    //str[i] = str[i] ^ enkey[i%enlen];                                                                                                                                                                                       
-                    buf[i] = buf[i] ^ enkey[i%enlen];
-
+                    //str[i] = str[i] ^ enkey[i%enlen];                                                                                                                           
+                    str[j] = buf[j] ^ enkey[i%enlen];
+                    j++;
                   }
-                  //              str[i] = '\0';                                                                                                                                                                                              
-                  // printk(KERN_INFO "!!!E the decrypted reading string is %s\n", str);                                                                                                                                                      
+                  //              str[i] = '\0';                                                                                                                                  
+                  // printk(KERN_INFO "!!!E the decrypted reading string is %s\n", str);                                                                                          
                   printk(KERN_INFO "!!!E end of the string  is %d\n", i);
                   printk(KERN_INFO "!!!E");
 
-                  if (copy_to_user(buf, buf, ret)) {
+                  if (copy_to_user(buf, str, count)) {
                     return -EFAULT;
                   }
                 }
